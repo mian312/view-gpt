@@ -20,7 +20,15 @@ const App = () => {
   const handleImageUpload = async (file) => {
     setIsLoading(true);
     setRetry(false);
-
+  
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    
+    if (!validImageTypes.includes(file.type)) {
+      console.error('Invalid file type. Please upload a JPEG, PNG, or GIF image.');
+      setIsLoading(false);
+      return;
+    }
+  
     const reader = new FileReader();
     reader.onload = async () => {
       const base64Image = reader.result;
@@ -28,15 +36,23 @@ const App = () => {
       try {
         const evaluationResult = await sendImageToAPI(base64Image);
         setEvaluation(evaluationResult);
-        // We won't send the evaluation to AI automatically anymore
       } catch (error) {
+        console.error('Error processing the image:', error);
         setRetry(true);
       } finally {
         setIsLoading(false);
       }
     };
+  
+    reader.onerror = (error) => {
+      console.error('Error reading file:', error);
+      setIsLoading(false);
+      setRetry(true);
+    };
+  
     reader.readAsDataURL(file);
   };
+  
 
   const handleSendMessage = async (message, sender = 'user') => {
     setMessages((prevMessages) => [...prevMessages, { text: message, sender }]);
