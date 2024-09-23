@@ -6,6 +6,8 @@ import MessageInput from './components/MessageInput';
 import LoadingIndicator from './components/LoadingIndicator';
 import RetryButton from './components/RetryButton';
 import { sendImageToAPI, sendMessageToAPI } from './utils/groqApi';
+import imageCompression from 'browser-image-compression';
+import heic2any from 'heic2any';
 
 const App = () => {
   const { isAccepted } = useContext(ConsentContext);
@@ -20,39 +22,60 @@ const App = () => {
   const handleImageUpload = async (file) => {
     setIsLoading(true);
     setRetry(false);
-  
-    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif'];
+
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/heic', 'image/heif'];
     
     if (!validImageTypes.includes(file.type)) {
       console.error('Invalid file type. Please upload a JPEG, PNG, or GIF image.');
       setIsLoading(false);
       return;
     }
-  
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64Image = reader.result;
-      setSelectedImage(base64Image);
-      try {
-        const evaluationResult = await sendImageToAPI(base64Image);
-        setEvaluation(evaluationResult);
-      } catch (error) {
-        console.error('Error processing the image:', error);
-        setRetry(true);
-      } finally {
-        setIsLoading(false);
+
+    try {
+      let processedFile = file;
+
+      // Convert HEIC/HEIF images to JPEG
+      if (file.type === 'image/heic' || file.type === 'image/heif') {
+        processedFile = await heic2any({ blob: file, toType: 'image/jpeg' });
       }
-    };
-  
-    reader.onerror = (error) => {
-      console.error('Error reading file:', error);
+
+      // Compress the image
+      const options = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+      };
+      const compressedFile = await imageCompression(processedFile, options);
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Image = reader.result;
+        setSelectedImage(base64Image);
+        try {
+          const evaluationResult = await sendImageToAPI(base64Image);
+          setEvaluation(evaluationResult);
+        } catch (error) {
+          console.error('Error processing the image:', error);
+          setRetry(true);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      reader.onerror = (error) => {
+        console.error('Error reading file:', error);
+        setIsLoading(false);
+        setRetry(true);
+      };
+
+      reader.readAsDataURL(compressedFile);
+
+    } catch (error) {
+      console.error('Error during image processing:', error);
       setIsLoading(false);
       setRetry(true);
-    };
-  
-    reader.readAsDataURL(file);
+    }
   };
-  
 
   const handleSendMessage = async (message, sender = 'user') => {
     setMessages((prevMessages) => [...prevMessages, { text: message, sender }]);
@@ -111,6 +134,11 @@ const App = () => {
 
           {isLoading && <LoadingIndicator />}
           {retry && <RetryButton onRetry={handleRetry} />}
+          {/* {evaluation.length > 0 && (
+            <div className="bg-gray-100 p-4 rounded-lg my-4">
+              <p className="text-sm text-gray-600">{evaluation}</p>
+            </div>
+          )} */}
 
           <MessageList messages={messages.slice(1)} isLoading={isTyping} />
 

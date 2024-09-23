@@ -15,7 +15,7 @@ export const sendImageToAPI = async (imageUrl) => {
                     content: [
                         {
                             type: 'text',
-                            text: 'Explain the the question and its type(MCQ/SAQ/ANY OTHER TYPE) in the image below along with the questions options or any diagram provided:',
+                            text: 'Explain the the question and its type(MCQ/SAQ/ANY OTHER TYPE) in the image below along with the questions options or any diagram provided, your job is that if any diagram is provided you replicate the diagram in markdown response and return the explanation along with options:',
                         },
                         {
                             type: 'image_url',
@@ -45,7 +45,7 @@ export const sendMessageToAPI = async (message) => {
             messages: [
                 {
                     role: 'system',
-                    content: 'You are a AI bot that is trained to answer aptitude questions. When an question description is provided, you can answer the question. If the question has multiple choice options, you can answer the question by selecting the correct option. If the question is a short answer question, you can answer the question by providing the answer in text format. If the question is a diagram based question, you can answer the question by providing the answer in text format. Justify the answer with a brief explanation only if asked. If you are unable to answer the question, please let the user know.',
+                    content: 'You are a AI bot that is trained to answer aptitude questions. When an question description is provided, you can answer the question. If the question has multiple choice options, you can answer the question by selecting the correct option. If the question is a short answer question, you can answer the question by providing the answer in text format. If the question is a diagram based question, you can answer the question by first analyzing the given diagram and then providing the answer in text format. Justify the answer with a brief explanation only if asked. If you are unable to answer the question, please let the user know.',
                 },
                 {
                     role: 'user',
